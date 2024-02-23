@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>业主管理</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
+    <link rel="stylesheet" href="../../styles/page.css" />
+
+    <style>
+    .el-col {
+      border-radius: 4px;
+    }
+    .bg-purple-dark {
+      background: #99a9bf;
+    }
+    .bg-purple-light {
+      background: #e5e9f2;
+    }
+    .grid-content {
+      border-radius: 4px;
+      min-height: 36px;
+    }
+    .row-bg {
+      padding: 10px 0;
+      background-color: #f9fafc;
+    }
+    .avatar-uploader .el-upload {
+      border: 1px dashed #d9d9d9;
+      border-radius: 6px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .avatar-uploader .el-upload:hover {
+      border-color: #409EFF;
+    }
+    .avatar-uploader-icon {
+      font-size: 28px;
+      color: #8c939d;
+      width: 178px;
+      height: 178px;
+      line-height: 178px;
+      text-align: center;
+    }
+    .avatar {
+      width: 178px;
+      height: 178px;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <div class="dashboard-container" id="food-app">
+    <div class="container">
+      <div class="tableBar">
+
+        <el-form :inline="true" :model="formInline" class="demo-form-inline">
+
+          <el-form-item label="业主名称">
+            <el-input v-model="formInline.name" placeholder="业主名称"></el-input>
+          </el-form-item>
+
+          <el-form-item label="小区名称">
+            <el-select v-model="formInline.communityName" placeholder="小区名称" clearable>
+              <el-option label="休伯利安" value="休伯利安"></el-option>
+              <el-option label="璃月" value="璃月"></el-option>
+            </el-select>
+          </el-form-item>
+
+          <el-form-item>
+            <el-button type="primary" @click="onSubmit">查询</el-button>
+          </el-form-item>
+
+        </el-form>
+
+        <div class="tableLab">
+          <!--    取消全选按钮-->
+          <el-button @click="toggleSelection()" type="primary">取消全选</el-button>
+          <!--    批量删除按钮-->
+          <el-button @click="multiDeleteOwner()" type="danger" >批量删除</el-button>
+          <!--    发布通知按钮-->
+          <el-button @click="addOwnerInfo('add')" type="success" >新增业主</el-button>
+        </div>
+      </div>
+    </div>
+
+    <el-row>
+      <el-col :span="24">
+        <div class="grid-content bg-purple-dark">
+          <!--    业主管理表单-->
+          <el-table
+                  ref="multipleTable"
+                  :data="tableData"
+                  tooltip-effect="dark"
+                  style="width: 100%"
+                  @selection-change="handleSelectionChange">
+
+            <el-table-column
+                    type="selection"
+                    width="40">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="communityName"
+                    label="所属小区"
+                    width="120">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="name"
+                    label="业主名称"
+                    width="120">
+            </el-table-column>
+
+            <el-table-column prop="picture" label="业主照片" align="center">
+              <template slot-scope="{ row }">
+                <el-image style="width: auto; height: 40px; border:none;cursor: pointer;"
+                          :src="getImage(row.picture)"
+                          :preview-src-list="[ `/file/download?name=${row.picture}` ]" >
+                  <div slot="error" class="image-slot">
+                    <img src="./../../images/noImg.png"  style="width: auto; height: 40px; border:none;"  alt="">
+                  </div>
+                </el-image>
+              </template>
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="idcard"
+                    label="身份证号"
+                    width="120">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="telephone"
+                    label="联系方式"
+                    width="120">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="sex"
+                    label="性别"
+                    width="120">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    label="出生日期"
+                    width="135">
+              <template slot-scope="scope">{{ scope.row.birthday }}</template>
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="familyMembers"
+                    label="家庭成员人数"
+                    width="120">
+            </el-table-column>
+
+            <el-table-column label="操作" align="center" width="350">
+              <template slot-scope="scope">
+                <el-button
+                        size="mini"
+                        type="primary"
+                        @click="addOwnerInfo(scope.row.id)">修改
+                </el-button>
+                <el-button
+                        size="mini"
+                        type="danger"
+                        @click="handleDelete(scope.$index, scope.row)">删除
+                </el-button>
+                <el-button
+                        size="mini"
+                        type="success"
+                        @click="lookNumbers(scope.row.id)">查看家庭成员
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-col>
+    </el-row>
+
+    <div class="block" align="center">
+      <el-pagination
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange"
+              :current-page="currentPage"
+              :page-sizes="[5, 10, 15, 20]"
+              :page-size="pageSize"
+              layout="total, sizes, prev, pager, next, jumper"
+              :total="total">
+      </el-pagination>
+    </div>
+
+  </div>
+
+  <!--  家庭成员表单-->
+  <el-dialog title="家庭成员表" :visible.sync="dialogTableVisible">
+
+    <el-button
+            size="mini"
+            type="primary"
+            @click="addFamilyMembers">新增
+    </el-button>
+
+    <el-table
+            ref="multipleTable"
+            :data="gridData"
+            tooltip-effect="dark"
+            style="width: 100%"
+            @selection-change="handleSelectionChange">
+
+      <el-table-column
+              type="selection"
+              width="40">
+      </el-table-column>
+
+      <el-table-column
+              align="center"
+              prop="name"
+              label="姓名"
+              width="120">
+      </el-table-column>
+
+      <el-table-column prop="picture" label="照片" align="center">
+        <template slot-scope="{ row }">
+          <el-image style="width: auto; height: 40px; border:none;cursor: pointer;"
+                    :src="getImage(row.picture)"
+                    :preview-src-list="[ `/file/download?name=${row.picture}` ]" >
+            <div slot="error" class="image-slot">
+              <img src="./../../images/noImg.png"  style="width: auto; height: 40px; border:none;"  alt="">
+            </div>
+          </el-image>
+        </template>
+      </el-table-column>
+
+      <el-table-column
+              align="center"
+              prop="idcard"
+              label="身份证号"
+              width="120">
+      </el-table-column>
+
+      <el-table-column
+              align="center"
+              prop="telephone"
+              label="联系方式"
+              width="120">
+      </el-table-column>
+
+      <el-table-column
+              align="center"
+              prop="sex"
+              label="性别"
+              width="120">
+      </el-table-column>
+
+      <el-table-column
+              align="center"
+              label="出生日期"
+              width="135">
+        <template slot-scope="scope">{{ scope.row.birthday }}</template>
+      </el-table-column>
+
+      <el-table-column label="操作" align="center" width="150">
+        <template slot-scope="scope">
+          <el-button
+                  size="mini"
+                  type="danger"
+                  @click="deleteFamilyMembers(scope.row.id)">删除
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+  </el-dialog>
+
+  <!--  增加家庭成员表单-->
+  <el-dialog title="新增家庭成员" :visible.sync="dialogFormVisible">
+
+    <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
+
+      <el-form-item label="姓名" prop="name">
+        <el-input v-model="ruleForm.name"></el-input>
+      </el-form-item>
+
+      <el-form-item label="照片" prop="picture">
+        <el-upload
+                class="avatar-uploader"
+                action="/file/upload"
+                :show-file-list="false"
+                :on-success="handleAvatarSuccess"
+                :before-upload="beforeAvatarUpload">
+          <img v-if="imageUrl" :src="imageUrl" class="avatar" alt="" >
+          <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+        </el-upload>
+      </el-form-item>
+
+      <el-form-item label="身份证号" prop="idcard">
+        <el-input v-model="ruleForm.idcard"></el-input>
+      </el-form-item>
+
+      <el-form-item label="联系方式" prop="telephone">
+        <el-input v-model="ruleForm.telephone"></el-input>
+      </el-form-item>
+
+      <el-form-item label="性别" prop="sex">
+        <el-radio-group v-model="ruleForm.sex">
+          <el-radio label="男"></el-radio>
+          <el-radio label="女"></el-radio>
+        </el-radio-group>
+      </el-form-item>
+
+      <el-form-item label="出生日期" required>
+        <el-col :span="11">
+          <el-form-item prop="birthday">
+            <el-date-picker type="date" placeholder="选择日期" v-model="ruleForm.birthday" style="width: 100%;"></el-date-picker>
+          </el-form-item>
+        </el-col>
+      </el-form-item>
+
+      <el-form-item>
+        <el-button type="primary" @click="submitForm('ruleForm')">立即创建</el-button>
+        <el-button @click="cancelCommit()">取 消</el-button>
+        <el-button @click="resetForm('ruleForm')">重置</el-button>
+      </el-form-item>
+
+    </el-form>
+
+  </el-dialog>
+</div>
+
+
+<!-- 开发环境版本，包含了有帮助的命令行警告 -->
+<script src="../../plugins/vue/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="../../plugins/element-ui/index.js"></script>
+<!-- 引入axios -->
+<script src="../../plugins/axios/axios.min.js"></script>
+
+<script>
+  new Vue({
+    el: '#app',
+    data() {
+      return {
+        //家庭成员表格
+        gridData: '',
+        //控制表格是否显示
+        dialogTableVisible: false,
+        //控制增加家庭成员表格是否显示
+        dialogFormVisible: false,
+
+        imageUrl: '',
+
+        //增加家庭成员表格
+        ruleForm: {
+          //姓名
+          name: '',
+          //身份证号
+          idcard: '',
+          //联系方式
+          telephone: '',
+          //出生日期
+          birthday: '',
+          //性别
+          sex: '',
+          //照片
+          picture: '',
+          //户主ID
+          ownerId: ''
+        },
+        rules: {
+          name: [
+            { required: true, message: '请输入姓名', trigger: 'blur' },
+          ],
+          idcard: [
+            { required: true, message: '请输入身份证号', trigger: 'blur' },
+          ],
+          telephone: [
+            { required: true, message: '请输入联系方式', trigger: 'blur' },
+          ],
+          birthday: [
+            { type: 'date', required: true, message: '请选择出生日期', trigger: 'change' }
+          ],
+          sex: [
+            { required: true, message: '请选择性别', trigger: 'change' }
+          ]
+        },
+
+        tableData: [],
+        multipleSelection: [],
+
+        //搜索框内容
+        formInline: {
+          name: '',
+          communityName: ''
+        },
+
+        //分页参数
+        currentPage: 1,
+        pageSize: 5,
+        total: 0
+      };
+    },
+
+    //钩子函数，页面初始化
+    mounted() {
+      this.getOwnerByPage();
+    },
+
+    create() {
+      this.getOwnerByPage();
+    },
+
+    methods: {
+      //取消多选框的全部选择
+      toggleSelection(rows) {
+        if (rows) {
+          rows.forEach(row => {
+            this.$refs.multipleTable.toggleRowSelection(row);
+          });
+        } else {
+          this.$refs.multipleTable.clearSelection();
+        }
+      },
+
+      handleSelectionChange(val) {
+        this.multipleSelection = val
+      },
+
+      //修改
+      handleEdit(index, row) {
+        console.log(index, row);
+      },
+
+      //删除
+      handleDelete(index, row) {
+        this.multipleSelection[0] = row;
+
+        this.multiDeleteOwner()
+      },
+
+      //查看家庭成员
+      lookNumbers(row){
+        this.dialogTableVisible = true;
+
+        this.ruleForm.ownerId = row;
+        axios({
+          url: "http://localhost:8080/familyMembers/list?ownerId=" + row,
+          method: 'get'
+        }).then(resp => {
+          if (resp.data.result === false){
+            this.$message({
+              type: 'error',
+              message: resp.data.msg
+            });
+          }
+          this.gridData = resp.data.data
+        });
+
+      },
+
+      //批量删除业主信息
+      multiDeleteOwner(){
+        let ownerIds = [];
+        for (let i = 0; i < this.multipleSelection.length; i++) {
+          ownerIds.push(this.multipleSelection[i].id)
+        }
+
+        this.open(ownerIds);
+      },
+
+      // 打开删除的确认对话框
+      open(ownerIds) {
+        this.$confirm('此操作将永久删除该通知, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.deleteOwner(ownerIds)
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });
+        });
+      },
+
+      //删除业主信息的方法
+      deleteOwner(ownerIds){
+        let str = "http://localhost:8080/owner/delete?";
+
+        for (let i = 0; i < ownerIds.length; i++) {
+          if (i === ownerIds.length - 1){
+            str = str.concat("ownerIds=" + ownerIds[i]);
+          }else {
+            str = str.concat("ownerIds=" + ownerIds[i] + "&");
+          }
+        }
+
+        axios({
+          url: str,
+          method: 'delete',
+        }).then(resp => {
+          if (resp.data.result === true){
+            this.$message({
+              type: 'success',
+              message: '删除成功!'
+            });
+            this.getOwnerByPage();
+          }else {
+            this.$message({
+              type: 'error',
+              message: '删除失败,请稍后再试!'
+            });
+          }
+        });
+      },
+
+      //新增业主信息
+      addOwnerInfo(flag){
+        if (flag === 'add'){
+          window.parent.menuHandle({
+            id: '4',
+            url: 'page/owner/addowner.html',
+            name: '新增业主信息'
+          },true)
+        } else {
+          window.parent.menuHandle({
+            id: '4',
+            url: 'page/owner/addowner.html?id='+flag,
+            name: '修改业主信息'
+          }, true)
+        }
+      },
+
+      //查找业主信息
+      onSubmit() {
+        this.getOwnerByPage();
+      },
+
+      handleSizeChange(val) {
+        this.pageSize = val;
+        this.currentPage = 1;
+
+        this.getOwnerByPage();
+      },
+      handleCurrentChange(val) {
+        this.currentPage = val;
+        this.getOwnerByPage();
+      },
+
+      //分页查询业主信息
+      getOwnerByPage() {
+        let name = this.formInline.name
+        let communityName = this.formInline.communityName
+        let currentPage = this.currentPage
+        let pageSize = this.pageSize
+        axios({
+          url: "http://localhost:8080/owner/list",
+          method: 'get',
+          params: { name, communityName, currentPage, pageSize }
+        }).then(resp => {
+          if (resp.data.result === false && resp.data.msg === 'NOTLOGIN') {// 返回登录页面
+            localStorage.removeItem('userInfo')
+            window.top.location.href = '/web/page/login/login.html'
+          } else {
+            if (resp.data.result === false){
+              this.$message({
+                type: 'error',
+                message: resp.data.msg
+              });
+            }
+            this.tableData = resp.data.data.data
+            this.total = resp.data.data.total
+            this.currentPage = resp.data.data.currentPage
+          }
+        });
+      },
+
+      getImage (image) {
+        return `/file/download?name=${image}`
+      },
+
+      //删除家庭成员
+      deleteFamilyMembers(familyMembersId){
+        this.$confirm('此操作将永久删除该信息, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          axios({
+            url: "http://localhost:8080/familyMembers/delete?familyMembersId=" + familyMembersId,
+            method: 'delete',
+          }).then(resp => {
+            this.lookNumbers(resp.data.data);
+            if (resp.data.result === true){
+              this.$message({
+                type: 'success',
+                message: '删除成功!'
+              });
+            this.getOwnerByPage();
+            }else {
+              this.$message({
+                type: 'error',
+                message: '删除失败,请稍后再试!'
+              });
+            }
+          });
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });
+        });
+      },
+
+      //提交新增家庭成员
+      submitForm(formName) {
+        this.$refs[formName].validate((valid) => {
+          if (valid) {
+            axios({
+              url: "http://localhost:8080/familyMembers/add",
+              method: 'put',
+              data: this.ruleForm
+            }).then(resp => {
+              if (resp.data.result === true) {
+                this.getOwnerByPage();
+                this.$message({
+                  type: 'success',
+                  message: '操作成功!'
+                });
+                this.resetForm('ruleForm');
+                this.lookNumbers(resp.data.data);
+              } else {
+                this.$message({
+                  type: 'error',
+                  message: '操作失败,请稍后再试!'
+                });
+              }
+            })
+          } else {
+            return false;
+          }
+        });
+      },
+
+      //新增家庭成员
+      addFamilyMembers(){
+        this.dialogFormVisible = true;
+        this.resetForm('ruleForm');
+      },
+
+      //取消新增家庭成员
+      cancelCommit(){
+        this.dialogFormVisible = false
+      },
+
+      //重置新增家庭成员
+      resetForm(formName) {
+        this.$refs[formName].resetFields();
+        this.imageUrl = '';
+      },
+
+      //图片上传
+      handleAvatarSuccess(response) {
+        // 拼接down接口预览
+        if(response.code === 0 && response.msg === '未登录'){
+          window.top.location.href = '/web/page/login/login.html'
+        }else{
+          this.imageUrl = `/file/download?name=${response.data}`
+          this.ruleForm.picture = response.data
+        }
+      },
+      beforeAvatarUpload(file) {
+        const isJPG = file.type === 'image/jpeg';
+        const isLt2M = file.size / 1024 / 1024 < 2;
+
+        if (!isJPG) {
+          this.$message.error('上传头像图片只能是 JPG 格式!');
+        }
+        if (!isLt2M) {
+          this.$message.error('上传头像图片大小不能超过 2MB!');
+        }
+        return isJPG && isLt2M;
+      }
+    }
+  });
+
+</script>
+
+</body>
+</html>

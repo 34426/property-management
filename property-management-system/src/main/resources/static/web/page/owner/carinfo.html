@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>车辆信息</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
+    <link rel="stylesheet" href="../../styles/page.css" />
+
+    <style>
+    .el-col {
+      border-radius: 4px;
+    }
+    .bg-purple-dark {
+      background: #99a9bf;
+    }
+    .bg-purple-light {
+      background: #e5e9f2;
+    }
+    .grid-content {
+      border-radius: 4px;
+      min-height: 36px;
+    }
+    .row-bg {
+      padding: 10px 0;
+      background-color: #f9fafc;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <div class="dashboard-container" id="food-app">
+    <div class="container">
+      <div class="tableBar">
+
+        <el-form :inline="true" :model="formInline" class="demo-form-inline">
+          <el-form-item label="业主名称">
+            <el-input v-model="formInline.ownerName" placeholder="业主名称"></el-input>
+          </el-form-item>
+
+          <el-form-item label="车牌号">
+            <el-input v-model="formInline.carNumber" placeholder="车牌号"></el-input>
+          </el-form-item>
+
+          <el-form-item>
+            <el-button type="primary" @click="onSubmit">查询</el-button>
+          </el-form-item>
+        </el-form>
+
+        <div class="tableLab">
+          <!--    取消全选按钮-->
+          <el-button @click="toggleSelection()" type="primary">取消全选</el-button>
+          <!--    批量删除按钮-->
+          <el-button @click="multiDeleteCar()" type="danger" >批量删除</el-button>
+          <!--    发布通知按钮-->
+          <el-button @click="addCarInfo('add')" type="success" >新增车辆</el-button>
+        </div>
+      </div>
+    </div>
+
+    <el-row>
+      <el-col :span="24">
+        <div class="grid-content bg-purple-dark">
+          <!--    房产管理表单-->
+          <el-table
+                  ref="multipleTable"
+                  :data="tableData"
+                  tooltip-effect="dark"
+                  style="width: 100%"
+                  @selection-change="handleSelectionChange">
+
+            <el-table-column
+                    type="selection"
+                    width="55">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="ownerName"
+                    label="所属业主"
+                    width="200">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="carColor"
+                    label="车辆颜色"
+                    width="200">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="carNumber"
+                    label="车牌号"
+                    width="200">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="carType"
+                    label="车辆型号"
+                    width="200">
+            </el-table-column>
+
+            <el-table-column label="操作" align="center">
+              <template slot-scope="scope">
+                <el-button
+                        size="mini"
+                        type="primary"
+                        @click="addCarInfo(scope.row.id)">修改
+                </el-button>
+                <el-button
+                        size="mini"
+                        type="danger"
+                        @click="handleDelete(scope.$index, scope.row)">删除
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-col>
+    </el-row>
+
+    <div class="block" align="center">
+      <el-pagination
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange"
+              :current-page="currentPage"
+              :page-sizes="[5, 10, 15, 20]"
+              :page-size="pageSize"
+              layout="total, sizes, prev, pager, next, jumper"
+              :total="total">
+      </el-pagination>
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- 开发环境版本，包含了有帮助的命令行警告 -->
+<script src="../../plugins/vue/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="../../plugins/element-ui/index.js"></script>
+<!-- 引入axios -->
+<script src="../../plugins/axios/axios.min.js"></script>
+
+
+<script>
+  new Vue({
+    el: '#app',
+    data() {
+      return {
+        tableData: [],
+        multipleSelection: [],
+
+        //搜索框内容
+        formInline: {
+          ownerName: '',
+          carNumber: ''
+        },
+
+        //分页参数
+        currentPage: 1,
+        pageSize: 5,
+        total: 0
+      };
+    },
+
+    //钩子函数，页面初始化
+    mounted() {
+      this.getCarByPage();
+    },
+
+    methods: {
+      //取消多选框的全部选择
+      toggleSelection(rows) {
+        if (rows) {
+          rows.forEach(row => {
+            this.$refs.multipleTable.toggleRowSelection(row);
+          });
+        } else {
+          this.$refs.multipleTable.clearSelection();
+        }
+      },
+
+      handleSelectionChange(val) {
+        this.multipleSelection = val
+      },
+
+      //修改
+      handleEdit(index, row) {
+        console.log(index, row);
+      },
+
+      //删除
+      handleDelete(index, row) {
+        this.multipleSelection[0] = row;
+
+        this.multiDeleteCar()
+      },
+
+      //批量删除车辆信息
+      multiDeleteCar(){
+        let carIds = [];
+        for (let i = 0; i < this.multipleSelection.length; i++) {
+          carIds.push(this.multipleSelection[i].id)
+        }
+        this.open(carIds);
+      },
+
+      // 打开删除的确认对话框
+      open(carIds) {
+        this.$confirm('此操作将永久删除该通知, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.deleteCar(carIds)
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });
+        });
+      },
+
+      //删除车辆信息的方法
+      deleteCar(carIds){
+        let str = "http://localhost:8080/car/delete?";
+
+        for (let i = 0; i < carIds.length; i++) {
+          if (i === carIds.length - 1){
+            str = str.concat("carIds=" + carIds[i]);
+          }else {
+            str = str.concat("carIds=" + carIds[i] + "&");
+          }
+        }
+
+        axios({
+          url: str,
+          method: 'delete',
+        }).then(resp => {
+          if (resp.data.result === true){
+            this.$message({
+              type: 'success',
+              message: '删除成功!'
+            });
+            this.getCarByPage();
+          }else {
+            this.$message({
+              type: 'error',
+              message: '删除失败,请稍后再试!'
+            });
+          }
+        });
+      },
+
+      //新增车辆信息
+      addCarInfo(flag){
+        if (flag === 'add'){
+          window.parent.menuHandle({
+            id: '4',
+            url: 'page/owner/addcarinfo.html',
+            name: '新增车辆信息'
+          },true)
+        } else {
+          window.parent.menuHandle({
+            id: '4',
+            url: 'page/owner/addcarinfo.html?id='+flag,
+            name: '修改车辆信息'
+          },true)
+        }
+      },
+
+      //查找车辆信息
+      onSubmit() {
+        this.getCarByPage();
+      },
+
+      handleSizeChange(val) {
+        this.pageSize = val;
+        this.currentPage = 1;
+
+        this.getCarByPage();
+      },
+      handleCurrentChange(val) {
+        this.currentPage = val;
+        this.getCarByPage();
+      },
+
+      //分页查询车辆信息
+      getCarByPage() {
+        let ownerName = this.formInline.ownerName
+        let carNumber = this.formInline.carNumber
+        let currentPage = this.currentPage
+        let pageSize = this.pageSize
+        axios({
+          url: "http://localhost:8080/car/list",
+          method: 'get',
+          params: { ownerName, carNumber, currentPage, pageSize }
+        }).then(resp => {
+          if (resp.data.result === false && resp.data.msg === 'NOTLOGIN') {// 返回登录页面
+            localStorage.removeItem('userInfo')
+            window.top.location.href = '/web/page/login/login.html'
+          } else {
+            if (resp.data.result === false){
+              this.$message({
+                type: 'error',
+                message: resp.data.msg
+              });
+            }
+            this.tableData = resp.data.data.data
+            this.total = resp.data.data.total
+            this.currentPage = resp.data.data.currentPage
+          }
+        });
+      },
+    }
+  });
+
+</script>
+
+</body>
+</html>

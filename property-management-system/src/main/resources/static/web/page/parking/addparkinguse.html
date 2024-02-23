@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>新增车位使用信息</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
+    <link rel="stylesheet" href="../../styles/page.css" />
+</head>
+<body>
+
+<div id="app">
+
+    <div class="addBrand-container" id="food-add-app">
+
+        <div class="container">
+
+            <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
+
+                <el-form-item label="所属小区" prop="communityName">
+                    <el-select v-model="ruleForm.communityName" placeholder="请选择所属小区">
+                        <el-option label="休伯利安" value="休伯利安"></el-option>
+                        <el-option label="璃月" value="璃月"></el-option>
+                    </el-select>
+                </el-form-item>
+
+                <el-form-item label="车位编号" prop="code">
+                    <el-input v-model="ruleForm.code"></el-input>
+                </el-form-item>
+
+                <el-form-item label="业主名称" prop="ownerName">
+                    <el-input v-model="ruleForm.ownerName"></el-input>
+                </el-form-item>
+
+                <el-form-item label="联系方式" prop="telephone">
+                    <el-input v-model="ruleForm.telephone"></el-input>
+                </el-form-item>
+
+                <el-form-item label="使用性质" prop="useType">
+                    <el-radio-group v-model="ruleForm.useType">
+                        <el-radio label="购买"></el-radio>
+                        <el-radio label="月租"></el-radio>
+                        <el-radio label="年租"></el-radio>
+                    </el-radio-group>
+                </el-form-item>
+
+                <el-form-item label="使用开始日期" required>
+                    <el-col :span="11">
+                        <el-form-item prop="startTime">
+                            <el-date-picker type="date" placeholder="使用开始日期" v-model="ruleForm.startTime" style="width: 100%;"></el-date-picker>
+                        </el-form-item>
+                    </el-col>
+                </el-form-item>
+
+                <el-form-item label="使用结束日期" required>
+                    <el-col :span="11">
+                        <el-form-item prop="endTime">
+                            <el-date-picker type="date" placeholder="使用结束日期" v-model="ruleForm.endTime" style="width: 100%;"></el-date-picker>
+                        </el-form-item>
+                    </el-col>
+                </el-form-item>
+
+                <el-form-item>
+                    <el-button type="primary" @click="submitForm('ruleForm')">立即创建</el-button>
+                    <el-button @click="resetForm('ruleForm')">重置</el-button>
+                </el-form-item>
+
+            </el-form>
+        </div>
+    </div>
+
+</div>
+
+<!-- 开发环境版本，包含了有帮助的命令行警告 -->
+<script src="../../plugins/vue/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="../../plugins/element-ui/index.js"></script>
+<!-- 引入axios -->
+<script src="../../plugins/axios/axios.min.js"></script>
+<!-- 引入前端响应拦截器 -->
+<script src="../../js/request.js"></script>
+
+<script src="../../js/index.js"></script>
+
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                ruleForm: {
+                    //小区名称
+                    communityName: '',
+                    //车位编号
+                    code: '',
+                    //业主名称
+                    ownerName: '',
+                    //联系方式
+                    telephone: '',
+                    //使用性质
+                    useType: '',
+                    //使用开始日期
+                    startTime: '',
+                    //使用结束日期
+                    endTime: '',
+                },
+                rules: {
+                    communityName: [
+                        { required: true, message: '请选择小区名称', trigger: 'change' }
+                    ],
+                    code: [
+                        { required: true, message: '请输入车位编号', trigger: 'blur' },
+                    ],
+                    telephone: [
+                        { required: true, message: '请输入联系方式', trigger: 'blur' },
+                    ],
+                    ownerName: [
+                        { required: true, message: '请输入业主名称', trigger: 'blur' },
+                    ],
+                    startTime: [
+                        { type: 'date', required: true, message: '请选择使用开始日期', trigger: 'change' }
+                    ],
+                    endTime: [
+                        { type: 'date', required: true, message: '请选择使用结束日期', trigger: 'change' }
+                    ],
+                    useType: [
+                        { required: true, message: '请选择使用性质', trigger: 'change' }
+                    ]
+                }
+            };
+        },
+
+        created() {
+            let id = requestUrlParam('id');
+            this.id = id;
+
+            axios({
+                url: "http://localhost:8080/parkingUse/one",
+                method: 'get',
+                params: { id }
+            }).then(resp => {
+                if (resp.data.result === true) {
+
+                    let dateStr = resp.data.data.startTime;
+                    dateStr = dateStr.replace('年',"-").replace('月','-').replace('日','');
+                    console.log(dateStr)
+                    resp.data.data.startTime = dateStr;
+
+                    dateStr = resp.data.data.endTime;
+                    dateStr = dateStr.replace('年',"-").replace('月','-').replace('日','');
+                    resp.data.data.endTime = dateStr;
+
+                    resp.data.data.createTime = null;
+                    resp.data.data.updateTime = null;
+
+                    this.ruleForm = resp.data.data
+                }
+            })
+        },
+
+        methods: {
+            //新增车位使用信息
+            submitForm(formName) {
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        axios({
+                            url: "http://localhost:8080/parkingUse/add",
+                            method: 'put',
+                            data: this.ruleForm
+                        }).then(resp => {
+                            if (resp.data.result === true) {
+                                this.$message({
+                                    type: 'success',
+                                    message: '操作成功!'
+                                });
+                                this.resetForm('ruleForm')
+                            } else {
+                                this.$message({
+                                    type: 'error',
+                                    message: resp.data.msg
+                                });
+                            }
+                        })
+                    } else {
+                        return false;
+                    }
+                });
+            },
+
+            resetForm(formName) {
+                this.$refs[formName].resetFields();
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

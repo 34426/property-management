@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>新增物业收费明细</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
+    <link rel="stylesheet" href="../../styles/page.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <div class="addBrand-container" id="food-add-app">
+
+    <div class="container">
+
+      <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
+
+        <el-form-item label="所属小区" prop="communityName">
+          <el-select v-model="ruleForm.communityName" placeholder="请选择所属小区">
+            <el-option label="休伯利安" value="休伯利安"></el-option>
+            <el-option label="璃月" value="璃月"></el-option>
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="收费名称" prop="chargeName">
+          <el-input v-model="ruleForm.chargeName"></el-input>
+        </el-form-item>
+
+        <el-form-item label="收费类型" prop="chargeType">
+          <el-input v-model="ruleForm.chargeType"></el-input>
+        </el-form-item>
+
+        <el-form-item label="收费年限" prop="chargeYear">
+          <el-input v-model="ruleForm.chargeYear"></el-input>
+        </el-form-item>
+
+        <el-form-item label="收费金额(年)" prop="chargeMoney">
+          <el-input v-model="ruleForm.chargeMoney"></el-input>
+        </el-form-item>
+
+        <el-form-item>
+          <el-button type="primary" @click="submitForm('ruleForm')">立即创建</el-button>
+          <el-button @click="resetForm('ruleForm')">重置</el-button>
+        </el-form-item>
+
+      </el-form>
+    </div>
+  </div>
+
+</div>
+
+<!-- 开发环境版本，包含了有帮助的命令行警告 -->
+<script src="../../plugins/vue/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="../../plugins/element-ui/index.js"></script>
+<!-- 引入axios -->
+<script src="../../plugins/axios/axios.min.js"></script>
+<!-- 引入前端响应拦截器 -->
+<script src="../../js/request.js"></script>
+
+<script>
+  new Vue({
+    el: '#app',
+    data() {
+      return {
+        ruleForm: {
+          //所属小区
+          communityName: '',
+          //收费名称
+          chargeName: '',
+          //收费类型
+          chargeType: '',
+          //收费年限
+          chargeYear: '',
+          //收费金额
+          chargeMoney: ''
+        },
+        rules: {
+          communityName: [
+            { required: true, message: '请选择小区名称', trigger: 'change' }
+          ],
+          chargeName: [
+            { required: true, message: '请输入收费名称', trigger: 'blur' },
+          ],
+          chargeYear: [
+            { required: true, message: '请输入收费年限', trigger: 'blur' },
+          ],
+          chargeMoney: [
+            { required: true, message: '请输入收费金额', trigger: 'blur' },
+          ]
+        }
+      };
+    },
+    methods: {
+      //新增物业收费准则
+      submitForm(formName) {
+        this.$refs[formName].validate((valid) => {
+          if (valid) {
+            axios({
+              url: "http://localhost:8080/chargeRule/add",
+              method: 'put',
+              data: this.ruleForm
+            }).then(resp => {
+              if (resp.data.result === true) {
+                this.$message({
+                  type: 'success',
+                  message: '操作成功!'
+                });
+                this.resetForm('ruleForm')
+              } else {
+                this.$message({
+                  type: 'error',
+                  message: '操作失败,请稍后再试!'
+                });
+              }
+            })
+          } else {
+            return false;
+          }
+        });
+      },
+      resetForm(formName) {
+        this.$refs[formName].resetFields();
+      }
+    }
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>上门服务管理</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
+    <link rel="stylesheet" href="../../styles/page.css" />
+
+    <style>
+    .el-col {
+      border-radius: 4px;
+    }
+    .bg-purple-dark {
+      background: #99a9bf;
+    }
+    .bg-purple-light {
+      background: #e5e9f2;
+    }
+    .grid-content {
+      border-radius: 4px;
+      min-height: 36px;
+    }
+    .row-bg {
+      padding: 10px 0;
+      background-color: #f9fafc;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <div class="dashboard-container" id="food-app">
+    <div class="container">
+      <div class="tableBar">
+
+        <el-form :inline="true" :model="formInline" class="demo-form-inline">
+
+          <el-form-item label="小区名称">
+            <el-select v-model="formInline.communityName" placeholder="小区名称" clearable>
+              <el-option label="休伯利安" value="休伯利安"></el-option>
+              <el-option label="璃月" value="璃月"></el-option>
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="状态">
+            <el-select v-model="formInline.ishandle" placeholder="是否处理" clearable>
+              <el-option label="已处理" value="1"></el-option>
+              <el-option label="未处理" value="0"></el-option>
+              <el-option label="处理中" value="2"></el-option>
+            </el-select>
+          </el-form-item>
+
+          <el-form-item>
+            <el-button type="primary" @click="onSubmit">查询</el-button>
+          </el-form-item>
+
+        </el-form>
+
+<!--        <div class="tableLab">-->
+<!--          &lt;!&ndash;    取消全选按钮&ndash;&gt;-->
+<!--          <el-button @click="toggleSelection()" type="primary">取消全选</el-button>-->
+<!--          &lt;!&ndash;    批量删除按钮&ndash;&gt;-->
+<!--          <el-button @click="multiDelete()" type="danger" >批量删除</el-button>-->
+<!--        </div>-->
+      </div>
+    </div>
+
+    <el-row>
+      <el-col :span="24">
+        <div class="grid-content bg-purple-dark">
+          <!--    房产管理表单-->
+          <el-table
+                  ref="multipleTable"
+                  :data="tableData"
+                  tooltip-effect="dark"
+                  style="width: 100%"
+                  @selection-change="handleSelectionChange">
+
+<!--            <el-table-column-->
+<!--                    type="selection"-->
+<!--                    width="45">-->
+<!--            </el-table-column>-->
+
+            <el-table-column
+                    align="center"
+                    prop="communityName"
+                    label="所属小区"
+                    width="120">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="name"
+                    label="姓名"
+                    width="110">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="telephone"
+                    label="联系方式"
+                    width="120">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="buildingName"
+                    label="栋数"
+                    width="100">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="unit"
+                    label="单元"
+                    width="100">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="floor"
+                    label="楼层"
+                    width="100">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="roomNum"
+                    label="房间号"
+                    width="100">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="description"
+                    label="问题描述"
+                    width="160">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    label="问题提交时间"
+                    prop="commitTime"
+                    sortable
+                    width="135">
+              <template slot-scope="scope">{{ scope.row.commitTime  }}</template>
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="ishandle"
+                    label="状态"
+                    width="120">
+              <template slot-scope="scope">
+                {{String(scope.row.ishandle) == 0 ? '未处理' : (String(scope.row.ishandle) == 1 ? '已处理' : '处理中')}}
+              </template>
+            </el-table-column>
+
+            <el-table-column label="操作" align="center">
+              <template slot-scope="scope">
+                <el-button
+                        size="mini"
+                        type="primary"
+                        v-if="String(scope.row.ishandle) == 0"
+                        @click="dispatch(scope.row.id)">派遣员工
+                </el-button>
+<!--                <el-button-->
+<!--                        size="mini"-->
+<!--                        type="danger"-->
+<!--                        @click="handleDelete(scope.$index, scope.row)">删除-->
+<!--                </el-button>-->
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-col>
+    </el-row>
+
+    <div class="block" align="center">
+      <el-pagination
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange"
+              :current-page="currentPage"
+              :page-sizes="[5, 10, 15, 20]"
+              :page-size="pageSize"
+              layout="total, sizes, prev, pager, next, jumper"
+              :total="total">
+      </el-pagination>
+    </div>
+
+  </div>
+
+    <!--  派遣员工表单-->
+    <el-dialog title="派遣员工" :visible.sync="dialogFormVisible">
+
+        <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
+
+            <el-form-item label="小区名称">
+                <el-select v-model="ruleForm.communityName" placeholder="小区名称" clearable>
+                    <el-option label="休伯利安" value="休伯利安"></el-option>
+                    <el-option label="璃月" value="璃月"></el-option>
+                </el-select>
+            </el-form-item>
+
+            <el-form-item label="姓名" prop="name">
+                <el-input v-model="ruleForm.name"></el-input>
+            </el-form-item>
+
+            <el-form-item label="联系方式" prop="telephone">
+                <el-input v-model="ruleForm.telephone"></el-input>
+            </el-form-item>
+
+            <el-form-item label="收费金额" prop="chargesMoney">
+                <el-input v-model="ruleForm.chargesMoney"></el-input>
+            </el-form-item>
+
+            <el-form-item>
+                    <el-button type="primary" @click="submitForm('ruleForm')">立即派遣</el-button>
+                    <el-button @click="resetForm('ruleForm')">重置</el-button>
+            </el-form-item>
+
+        </el-form>
+
+    </el-dialog>
+
+</div>
+
+
+<!-- 开发环境版本，包含了有帮助的命令行警告 -->
+<script src="../../plugins/vue/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="../../plugins/element-ui/index.js"></script>
+<!-- 引入axios -->
+<script src="../../plugins/axios/axios.min.js"></script>
+
+<script>
+  new Vue({
+    el: '#app',
+    data() {
+      return {
+        tableData: [],
+        multipleSelection: [],
+
+        //派遣员工表单是否显示
+        dialogFormVisible: false,
+
+        //派遣员工表单
+        ruleForm: {
+              //姓名
+              name: '',
+              //联系方式
+              telephone: '',
+              //小区名称
+              communityName: '',
+              //收费金额
+              chargesMoney: '',
+              //上门服务信息Id
+              serverId: '',
+          },
+        rules: {
+              name: [
+                  { required: true, message: '请输入姓名', trigger: 'blur' },
+              ],
+              telephone: [
+                  { required: true, message: '请输入联系方式', trigger: 'blur' },
+              ],
+              communityName: [
+                { required: true, message: '请选择小区名称', trigger: 'change' }
+              ]
+          },
+
+        //搜索框内容
+        formInline: {
+          ishandle: '',
+          communityName: ''
+        },
+
+        //分页参数
+        currentPage: 1,
+        pageSize: 5,
+        total: 0
+      };
+    },
+
+    //钩子函数，页面初始化
+    mounted() {
+      this.getServeByPage();
+    },
+
+
+    methods: {
+      //取消多选框的全部选择
+      toggleSelection(rows) {
+        if (rows) {
+          rows.forEach(row => {
+            this.$refs.multipleTable.toggleRowSelection(row);
+          });
+        } else {
+          this.$refs.multipleTable.clearSelection();
+        }
+      },
+
+      handleSelectionChange(val) {
+        this.multipleSelection = val
+      },
+
+      // //修改
+      // handleEdit(index, row) {
+      //   console.log(index, row);
+      // },
+
+      //删除
+      handleDelete(index, row) {
+        console.log(index, row);
+      },
+
+      //批量删除
+      multiDelete(){
+        console.log(this.multipleSelection)
+      },
+
+      //查找上门服务信息
+      onSubmit() {
+        this.getServeByPage();
+      },
+
+      handleSizeChange(val) {
+        this.pageSize = val;
+        this.currentPage = 1;
+
+        this.getServeByPage();
+      },
+      handleCurrentChange(val) {
+        this.currentPage = val;
+        this.getServeByPage();
+      },
+
+      //分页查询上门服务
+      getServeByPage() {
+        let ishandle = this.formInline.ishandle
+        let communityName = this.formInline.communityName
+        let currentPage = this.currentPage
+        let pageSize = this.pageSize
+        axios({
+          url: "http://localhost:8080/serve/list",
+          method: 'get',
+          params: { ishandle, communityName, currentPage, pageSize }
+        }).then(resp => {
+
+            if (resp.data.result === false && resp.data.msg === 'NOTLOGIN') {// 返回登录页面
+                localStorage.removeItem('userInfo')
+                window.top.location.href = '/web/page/login/login.html'
+            } else {
+                if (resp.data.result === false){
+                    this.$message({
+                        type: 'error',
+                        message: resp.data.msg
+                    });
+                }
+                this.tableData = resp.data.data.data
+                this.total = resp.data.data.total
+                this.currentPage = resp.data.data.currentPage
+            }
+        });
+      },
+
+      //派遣员工
+      dispatch(id){
+          this.dialogFormVisible = true;
+
+          this.ruleForm.serverId = id;
+          // axios({
+          //     url: "http://localhost:8080/serve/dispatch",
+          //     method: 'post',
+          //     params: { id }
+          // }).then(resp => {
+          //         if (resp.data.result === false){
+          //             this.$message({
+          //                 type: 'error',
+          //                 message: resp.data.msg
+          //             });
+          //         }else {
+          //             this.dialogFormVisible = true;
+          //         }
+          // });
+      },
+
+      //提交派遣员工
+      submitForm(formName) {
+            this.$refs[formName].validate((valid) => {
+                if (valid) {
+                    axios({
+                        url: "http://localhost:8080/workOrder/add",
+                        method: 'put',
+                        data: this.ruleForm
+                    }).then(resp => {
+                        if (resp.data.result === true) {
+                            this.$message({
+                                type: 'success',
+                                message: '派遣成功!'
+                            });
+                            this.resetForm('ruleForm');
+                            this.dialogFormVisible = false;
+                            this.alterStatus(this.ruleForm.serverId)
+                        } else {
+                            this.$message({
+                                type: 'error',
+                                message: '派遣失败,请稍后再试!'
+                            });
+                        }
+                    })
+                } else {
+                    return false;
+                }
+            });
+        },
+
+      //修改上门服务状态
+      alterStatus(id){
+          axios({
+              url: "http://localhost:8080/serve/dispatch",
+              method: 'post',
+              params: { id }
+          }).then(resp => {
+              if (resp.data.result === false) {
+                  this.$message({
+                      type: 'error',
+                      message: resp.data.msg
+                  });
+              } else {
+                  this.id = '';
+              }
+          });
+      },
+
+      //重置派遣员工
+      resetForm(formName) {
+          this.$refs[formName].resetFields();
+          this.imageUrl = '';
+      },
+    }
+  });
+
+</script>
+
+</body>
+</html>

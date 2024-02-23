@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>车位使用管理</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
+    <link rel="stylesheet" href="../../styles/page.css" />
+
+    <style>
+    .el-col {
+      border-radius: 4px;
+    }
+    .bg-purple-dark {
+      background: #99a9bf;
+    }
+    .bg-purple-light {
+      background: #e5e9f2;
+    }
+    .grid-content {
+      border-radius: 4px;
+      min-height: 36px;
+    }
+    .row-bg {
+      padding: 10px 0;
+      background-color: #f9fafc;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <div class="dashboard-container" id="food-app">
+    <div class="container">
+      <div class="tableBar">
+
+        <el-form :inline="true" :model="formInline" class="demo-form-inline">
+
+          <el-form-item label="业主名称">
+            <el-input v-model="formInline.ownerName" placeholder="业主名称"></el-input>
+          </el-form-item>
+
+          <el-form-item label="使用性质">
+            <el-select v-model="formInline.useType" placeholder="使用性质" clearable>
+              <el-option label="购买" value="购买"></el-option>
+              <el-option label="月租" value="月租"></el-option>
+              <el-option label="年租" value="年租"></el-option>
+            </el-select>
+          </el-form-item>
+
+          <el-form-item>
+            <el-button type="primary" @click="getParkingUseInfoByPage">查询</el-button>
+          </el-form-item>
+        </el-form>
+
+        <div class="tableLab">
+          <!--    取消全选按钮-->
+          <el-button @click="toggleSelection()" type="primary">取消全选</el-button>
+          <!--    批量删除按钮-->
+          <el-button @click="multiDeleteParkingUse()" type="danger" >批量删除</el-button>
+          <!--    发布通知按钮-->
+          <el-button @click="addParkingUseInfo('add')" type="success" >新增车位使用</el-button>
+        </div>
+      </div>
+    </div>
+
+    <el-row>
+      <el-col :span="24">
+        <div class="grid-content bg-purple-dark">
+          <!--    房产管理表单-->
+          <el-table
+                  ref="multipleTable"
+                  :data="tableData"
+                  tooltip-effect="dark"
+                  style="width: 100%"
+                  @selection-change="handleSelectionChange">
+
+            <el-table-column
+                    type="selection"
+                    width="55">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="communityName"
+                    label="所属小区"
+                    width="120">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="code"
+                    label="车位编号"
+                    width="120">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="ownerName"
+                    label="业主名称"
+                    width="120">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="telephone"
+                    label="联系方式"
+                    width="120">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    prop="useType"
+                    label="使用性质"
+                    width="120">
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    label="使用开始时间"
+                    prop="startTime"
+                    width="145">
+              <template slot-scope="scope">{{ scope.row.startTime }}</template>
+            </el-table-column>
+
+            <el-table-column
+                    align="center"
+                    label="使用结束时间"
+                    prop="endTime"
+                    width="145">
+              <template slot-scope="scope">{{ scope.row.endTime }}</template>
+            </el-table-column>
+
+
+            <el-table-column label="操作" align="center">
+              <template slot-scope="scope">
+                <el-button
+                        size="mini"
+                        type="primary"
+                        @click="addParkingUseInfo(scope.row.id)">修改
+                </el-button>
+                <el-button
+                        size="mini"
+                        type="danger"
+                        @click="handleDelete(scope.$index, scope.row)">删除
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-col>
+    </el-row>
+
+    <div class="block" align="center">
+      <el-pagination
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange"
+              :current-page="currentPage"
+              :page-sizes="[5, 10, 15, 20]"
+              :page-size="pageSize"
+              layout="total, sizes, prev, pager, next, jumper"
+              :total="total">
+      </el-pagination>
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- 开发环境版本，包含了有帮助的命令行警告 -->
+<script src="../../plugins/vue/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="../../plugins/element-ui/index.js"></script>
+<!-- 引入axios -->
+<script src="../../plugins/axios/axios.min.js"></script>
+
+
+<script>
+  new Vue({
+    el: '#app',
+    data() {
+      return {
+        tableData: [],
+        multipleSelection: [],
+
+        //搜索框内容
+        formInline: {
+          ownerName: '',
+          useType: ''
+        },
+
+        //分页参数
+        currentPage: 1,
+        pageSize: 5,
+        total: 0
+      };
+    },
+
+    //钩子函数，页面初始化
+    mounted() {
+      this.getParkingUseInfoByPage();
+    },
+
+    methods: {
+      //取消多选框的全部选择
+      toggleSelection(rows) {
+        if (rows) {
+          rows.forEach(row => {
+            this.$refs.multipleTable.toggleRowSelection(row);
+          });
+        } else {
+          this.$refs.multipleTable.clearSelection();
+        }
+      },
+
+      handleSelectionChange(val) {
+        this.multipleSelection = val
+      },
+
+      //修改
+      handleEdit(index, row) {
+        console.log(index, row);
+      },
+
+      //删除
+      handleDelete(index, row) {
+        this.multipleSelection[0] = row;
+
+        this.multiDeleteParkingUse()
+      },
+
+      //批量删除车位信息
+      multiDeleteParkingUse(){
+        let parkingUseIds = [];
+        for (let i = 0; i < this.multipleSelection.length; i++) {
+          parkingUseIds.push(this.multipleSelection[i].id)
+        }
+
+        this.open(parkingUseIds);
+      },
+
+      // 打开删除的确认对话框
+      open(parkingUseIds) {
+        this.$confirm('此操作将永久删除该车位使用信息, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.deleteParkingUse(parkingUseIds)
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });
+        });
+      },
+
+      //删除车位信息的方法
+      deleteParkingUse(parkingUseIds){
+        let str = "http://localhost:8080/parkingUse/delete?";
+
+        for (let i = 0; i < parkingUseIds.length; i++) {
+          if (i === parkingUseIds.length - 1){
+            str = str.concat("parkingUseIds=" + parkingUseIds[i]);
+          }else {
+            str = str.concat("parkingUseIds=" + parkingUseIds[i] + "&");
+          }
+        }
+
+        axios({
+          url: str,
+          method: 'delete',
+        }).then(resp => {
+          if (resp.data.result === true){
+            this.$message({
+              type: 'success',
+              message: '删除成功!'
+            });
+            this.getParkingUseInfoByPage();
+          }else {
+            this.$message({
+              type: 'error',
+              message: '删除失败,请稍后再试!'
+            });
+          }
+        });
+      },
+
+      //新增车位使用信息
+      addParkingUseInfo(flag){
+        if (flag === 'add'){
+          window.parent.menuHandle({
+            id: '10',
+            url: 'page/parking/addparkinguse.html',
+            name: '新增车位使用信息'
+          },true)
+        } else {
+          window.parent.menuHandle({
+            id: '10',
+            url: 'page/parking/addparkinguse.html?id='+flag,
+            name: '修改车位使用信息'
+          },true)
+        }
+      },
+
+      handleSizeChange(val) {
+        this.pageSize = val;
+        this.currentPage = 1;
+
+        this.getParkingUseInfoByPage();
+      },
+      handleCurrentChange(val) {
+        this.currentPage = val;
+
+        this.getParkingUseInfoByPage();
+      },
+
+      //分页查询车位使用信息
+      getParkingUseInfoByPage() {
+        let ownerName = this.formInline.ownerName
+        let useType = this.formInline.useType
+        let currentPage = this.currentPage
+        let pageSize = this.pageSize
+        axios({
+          url: "http://localhost:8080/parkingUse/list",
+          method: 'get',
+          params: { ownerName, useType, currentPage, pageSize }
+        }).then(resp => {
+          if (resp.data.result === false && resp.data.msg === 'NOTLOGIN') {// 返回登录页面
+            localStorage.removeItem('userInfo')
+            window.top.location.href = '/web/page/login/login.html'
+          } else {
+            if (resp.data.result === false){
+              this.$message({
+                type: 'error',
+                message: resp.data.msg
+              });
+            }
+            this.tableData = resp.data.data.data
+            this.total = resp.data.data.total
+            this.currentPage = resp.data.data.currentPage
+          }
+        });
+      },
+    }
+  });
+
+</script>
+
+</body>
+</html>

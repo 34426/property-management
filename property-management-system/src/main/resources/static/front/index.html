@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>龙城物业</title>
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="plugins/element-ui/index.css" />
+
+    <link rel="stylesheet" type="text/css" th:href="@{css/bootstrap.css}" href="css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" th:href="@{fonts/font-awesome/css/font-awesome.css}"
+          href="fonts/font-awesome/css/font-awesome.css">
+
+    <link rel="stylesheet" type="text/css" th:href="@{/webStatic/css/style.css}" href="css/style.css">
+
+    <style>
+        .el-table .warning-row {
+            background: oldlace;
+        }
+
+        .el-table .success-row {
+            background: #f0f9eb;
+        }
+
+        #webOut:hover, #editPhone:hover {
+            cursor: pointer;
+            text-decoration: underline;
+            color: rgba(255,255,255, .9);
+        }
+        .text_span {
+            display: inline-block;
+            white-space: nowrap;
+            min-width: 500px;
+            max-width: 500px;
+            overflow: hidden;
+            text-overflow:ellipsis;
+        }
+    </style>
+</head>
+<body id="page-top" data-spy="scroll" data-target=".navbar-fixed-top">
+
+<nav id="menu" class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                    data-target="#bs-example-navbar-collapse-1"><span class="sr-only">Toggle navigation</span> <span
+                    class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span></button>
+            <a class="navbar-brand page-scroll" href="#page-top" style="font-size: 28px">龙城物业</a>
+        </div>
+
+
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="#header" class="page-scroll">首页标题</a></li>
+                <li><a href="#notice" class="page-scroll">公告通知</a></li>
+                <!--                <li><a href="#access" class="page-scroll">出入登记</a></li>-->
+                <li><a href="#about" class="page-scroll">上门服务</a></li>
+                <li><a href="#services" class="page-scroll">服务评价</a></li>
+                <li><a href="#propertyPayment" class="page-scroll">物业缴费</a></li>
+                <li><a href="#testimonials" class="page-scroll">关于我们</a></li>
+            </ul>
+        </div>
+
+    </div>
+</nav>
+<!-- 头部 -->
+<header id="header">
+    <div class="intro">
+        <div class="overlay">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-8 col-md-offset-2 intro-text">
+                        <h1 style="font-size: 52px">欢迎回家！</h1>
+                        <p> 生活是无字的书，眼光敏锐的人看得见精彩的词句；书是有字的生活，感情丰富的人才能深刻领悟。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- 获取接触部分 -->
+<div id="get-touch">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-md-6 col-md-offset-1">
+                <h3 style="font-size: 20px">全心全意为业主服务！创造美丽家园！</h3>
+                <p> 用心服务，尽善尽美，悉查业主需求，超越业主期待！</p>
+            </div>
+            <div class="col-xs-12 col-md-4 text-center">
+                <div style="font-size: 16px; height: 64px;" th:if="${session.webUser != null}">
+                    <div>
+
+                        <div style="width: 250px; text-align: center; margin: 0 auto; line-height: 30px">
+                            已登录！欢迎您:
+                        </div>
+
+                        <div style="width: 150px; text-align: center; margin: 0 auto; line-height: 30px">
+                            <span id="webOut" onclick="logOut()">退出</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="app">
+
+    <!-- 公告通知 -->
+    <div id="notice">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12 col-md-6">
+                    <div class="about-text">
+                        <h2 style="font-size: 30px;">
+                            公告通知
+                            <div style="clear: both"></div>
+                        </h2>
+                        <div class="col-lg-12 col-sm-12 col-xs-12" style="padding-left: 0;
+                            max-height: 245px; min-height: 245px">
+                            <div class="panel-group" id="accordion">
+                                <div class="panel panel-default" th:each="notice, eachStatus : ${noticeInfo}">
+                                    <h3 style="font-size: 20px" align="center">人间烟火味，最抚凡人心！</h3>
+                                    <p align="center">生活如花，姹紫嫣红</p>
+                                    <p align="center">生活如歌，美妙动听</p>
+                                    <p align="center">生活如酒，芳香清醇</p>
+                                    <p align="center">生活如诗，意境深远</p>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <el-button type="primary" @click="getNoticeByPage()" >查看通知</el-button>
+
+                                <el-drawer
+                                        title="通知公告"
+                                        :visible.sync="table"
+                                        direction="rtl"
+                                        size="50%">
+                                    <el-table :data="tableData"
+                                              :row-class-name="tableRowClassName">
+                                        <el-table-column
+                                                align="center"
+                                                prop="content"
+                                                label="公告内容"
+                                                show-overflow-tooltip>
+                                        </el-table-column>
+
+                                        <el-table-column
+                                                align="center"
+                                                label="发布日期"
+                                                prop="createDate"
+                                                show-overflow-tooltip>
+                                            <template slot-scope="scope">{{ scope.row.createDate }}</template>
+                                        </el-table-column>
+                                    </el-table>
+
+                                    <div class="tableBar">
+                                        <div class="block" align="center">
+                                            <el-pagination
+                                                    @size-change="handleSizeChange"
+                                                    @current-change="handleCurrentChange"
+                                                    :current-page="currentPage"
+                                                    :page-sizes="[5, 10]"
+                                                    :page-size="pageSize"
+                                                    layout="total, sizes, prev, pager, next, jumper"
+                                                    :total="total">
+                                            </el-pagination>
+                                        </div>
+                                    </div>
+
+                                </el-drawer>
+
+                            </div>
+                        </div>
+                        <div>
+                            <nav aria-label="Page navigation">
+                                <input type="hidden" name="currPage" th:value="${currPage}">
+                                <input type="hidden" name="totalPage" th:value="${totalPage}">
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-md-6">
+                    <img src="img/new_index.jpg" class="img-responsive" alt="" width="585" height="350" src="">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 上门服务 -->
+    <div id="about">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12 col-md-6">
+                    <img src="img/05-large.jpg" class="img-responsive" alt="" width="585"
+                         height="350">
+                </div>
+                <div class="col-xs-12 col-md-6">
+                    <div class="about-text">
+                        <h2 style="font-size: 30px">上门服务</h2>
+                        <div class="col-lg-12 col-sm-12 col-xs-12" style="padding-left: 0;
+                            max-height: 245px; min-height: 245px">
+                            <div class="panel-group" >
+                                <div class="panel panel-default" th:each="notice, eachStatus : ${noticeInfo}">
+                                    <h3 style="font-size: 20px" align="center">一声呼唤，服务到家</h3>
+                                    <p align="center">业主至上，服务至尊</p>
+                                    <p align="center">业主是上帝，服务无止境</p>
+                                    <p align="center">手牵手的承诺，心贴心的服务</p>
+                                    <p align="center">天底没有最好的承诺，只有更好的服务！</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+
+                                <el-button type="primary" @click="dialogFormVisible = true">提交服务信息</el-button>
+
+                                <el-dialog title="报修信息" :visible.sync="dialogFormVisible">
+                                    <el-form :model="form">
+                                        <el-form-item label="问题描述">
+                                            <el-input type="textarea" v-model="form.description "></el-input>
+                                        </el-form-item>
+                                    </el-form>
+                                    <div slot="footer" class="dialog-footer">
+                                        <el-button @click="dialogFormVisible = false">取 消</el-button>
+                                        <el-button type="primary" @click="commitServer">提 交</el-button>
+                                    </div>
+                                </el-dialog>
+
+                                <el-button type="success" @click="selectServerInfo()">服务进度查询</el-button>
+
+                                <el-dialog title="上门服务信息" :visible.sync="dialogTableVisible">
+                                    <el-table :data="serverData">
+                                        <el-table-column
+                                            align="center"
+                                            prop="description"
+                                            label="问题描述"
+                                            show-overflow-tooltip>
+                                        </el-table-column>
+
+                                        <el-table-column
+                                            align="center"
+                                            label="提交时间"
+                                            prop="commitTime"
+                                            show-overflow-tooltip>
+                                            <template slot-scope="scope">{{ scope.row.commitTime }}</template>
+                                        </el-table-column>
+
+                                        <el-table-column
+                                                align="center"
+                                                prop="ishandle"
+                                                label="状态"
+                                                show-overflow-tooltip>
+                                            <template slot-scope="scope">
+                                                {{String(scope.row.ishandle) == 0 ? '未处理' : (String(scope.row.ishandle) == 1 ? '已处理' : '处理中')}}
+                                            </template>
+                                        </el-table-column>
+
+                                        <el-table-column label="操作">
+                                            <template slot-scope="scope">
+                                                <el-button
+                                                        size="mini"
+                                                        type="success"
+                                                        v-if="String(scope.row.ishandle) == '2'"
+                                                        @click="handleEdit(scope.$index, scope.row)">查看进度</el-button>
+                                            </template>
+                                        </el-table-column>
+
+                                    </el-table>
+                                </el-dialog>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 服务评价 -->
+    <div id="services">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12 col-md-6">
+                    <div class="about-text">
+                        <h2 style="font-size: 30px">服务评价</h2>
+                        <div class="col-lg-12 col-sm-12 col-xs-12" style="padding-left: 0;">
+                            <form role="form" style="position: relative; top: 0">
+                                <div class="panel-group" >
+                                    <div class="panel panel-default" th:each="notice, eachStatus : ${noticeInfo}">
+                                        <h3 style="font-size: 20px" align="center">用心聆听，用爱沟通</h3>
+                                        <p align="center">服务无止境，形象是生命</p>
+                                        <p align="center">服务无止境，公证彰真情</p>
+                                        <p align="center">展现文明素质，用心聆听评价</p>
+                                        <p align="center">说到不如做到，要做就做最好</p>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <el-button @click="displayServer()" type="primary" style="margin-left: 16px;">
+                                        服务评价
+                                    </el-button>
+
+                                    <el-drawer
+                                            title="服务信息"
+                                            size="50%"
+                                            :visible.sync="drawer"
+                                            :direction="direction"
+                                            :before-close="handleClose">
+                                        <el-table
+                                                :data="commentData"
+                                                style="width: 100%">
+                                            <el-table-column
+                                                    align="center"
+                                                    prop="description"
+                                                    label="问题描述"
+                                                    show-overflow-tooltip>
+                                            </el-table-column>
+
+                                            <el-table-column
+                                                    align="center"
+                                                    label="提交时间"
+                                                    prop="commitTime"
+                                                    show-overflow-tooltip>
+                                                <template slot-scope="scope">{{ scope.row.commitTime }}</template>
+                                            </el-table-column>
+
+                                            <el-table-column
+                                                    align="center"
+                                                    prop="name"
+                                                    label="员工姓名"
+                                                    show-overflow-tooltip>
+                                            </el-table-column>
+
+                                            <el-table-column
+                                                    align="center"
+                                                    prop="telephone"
+                                                    label="员工电话"
+                                                    show-overflow-tooltip>
+                                            </el-table-column>
+
+                                            <el-table-column
+                                                    align="center"
+                                                    prop="chargesMoney"
+                                                    label="收费金额"
+                                                    show-overflow-tooltip>
+                                            </el-table-column>
+
+                                            <el-table-column label="操作" align="center">
+                                                <template slot-scope="scope">
+                                                    <el-button
+                                                            size="mini"
+                                                            type="primary"
+                                                            @click="commentServer(scope.row)">评价
+                                                    </el-button>
+                                                </template>
+                                            </el-table-column>
+
+                                        </el-table>
+                                    </el-drawer>
+
+                                    <el-dialog title="评价信息" :visible.sync="commentFormVisible">
+                                        <el-form :model="commentInfo">
+                                            <el-form-item label="评价内容">
+                                                <el-input type="textarea" v-model="commentInfo.comment "></el-input>
+                                            </el-form-item>
+                                        </el-form>
+                                        <div slot="footer" class="dialog-footer">
+                                            <el-button @click="commentFormVisible = false">取 消</el-button>
+                                            <el-button type="primary" @click="commitComment">提 交</el-button>
+                                        </div>
+                                    </el-dialog>
+
+                                    <el-button @click="displayHistoryServer()" type="success" style="margin-left: 16px;">
+                                        历史评价
+                                    </el-button>
+
+                                    <el-drawer
+                                            title="我的历史评价"
+                                            size="50%"
+                                            :visible.sync="historyDrawer"
+                                            :direction="historyDirection"
+                                            :before-close="handleClose">
+                                        <el-table
+                                                :data="historyCommentData"
+                                                style="width: 100%">
+                                            <el-table-column
+                                                    align="center"
+                                                    prop="description"
+                                                    label="问题描述"
+                                                    show-overflow-tooltip>
+                                            </el-table-column>
+
+                                            <el-table-column
+                                                    align="center"
+                                                    label="提交时间"
+                                                    prop="commitTime"
+                                                    show-overflow-tooltip>
+                                                <template slot-scope="scope">{{ scope.row.commitTime }}</template>
+                                            </el-table-column>
+
+                                            <el-table-column
+                                                    align="center"
+                                                    prop="name"
+                                                    label="员工姓名"
+                                                    show-overflow-tooltip>
+                                            </el-table-column>
+
+                                            <el-table-column
+                                                    align="center"
+                                                    prop="telephone"
+                                                    label="员工电话"
+                                                    show-overflow-tooltip>
+                                            </el-table-column>
+
+                                            <el-table-column
+                                                    align="center"
+                                                    prop="chargesMoney"
+                                                    label="收费金额"
+                                                    show-overflow-tooltip>
+                                            </el-table-column>
+
+                                            <el-table-column
+                                                    align="center"
+                                                    prop="comment"
+                                                    label="我的评价"
+                                                    show-overflow-tooltip>
+                                            </el-table-column>
+
+                                        </el-table>
+                                    </el-drawer>
+
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-md-6">
+                    <img src="img/logo_bg.jpg" class="img-responsive" alt="" width="585" height="350">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 物业缴费 -->
+    <div id="propertyPayment">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12 col-md-6">
+                    <img src="img/propertyPayment.jpg" class="img-responsive" alt="" width="585"
+                         height="350">
+                </div>
+                <div class="col-xs-12 col-md-6">
+                    <div class="about-text">
+                        <h2 style="font-size: 30px">物业缴费</h2>
+                        <div class="col-lg-12 col-sm-12 col-xs-12" style="padding-left: 0;
+                            max-height: 245px; min-height: 245px">
+                            <div class="panel-group" >
+                                <div class="panel panel-default" th:each="notice, eachStatus : ${noticeInfo}">
+                                    <h3 style="font-size: 20px" align="center">一声呼唤，服务到家</h3>
+<!--                                    <p align="center">业主至上，服务至尊</p>-->
+<!--                                    <p align="center">业主是上帝，服务无止境</p>-->
+<!--                                    <p align="center">手牵手的承诺，心贴心的服务</p>-->
+<!--                                    <p align="center">天底没有最好的承诺，只有更好的服务！</p>-->
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <el-button @click="payment()" type="primary" style="margin-left: 16px;">
+                                    缴费查询
+                                </el-button>
+
+                                <el-drawer
+                                        title="待缴费信息"
+                                        size="70%"
+                                        :visible.sync="paymentDrawer"
+                                        :direction="paymentDirection"
+                                        :before-close="handleClose">
+
+                                    <el-table
+                                            :data="paymentData"
+                                            tooltip-effect="dark"
+                                            style="width: 100%">
+
+                                        <el-table-column
+                                                align="center"
+                                                prop="chargeRuleType"
+                                                label="收费类型"
+                                                show-overflow-tooltip>
+                                        </el-table-column>
+
+                                        <el-table-column
+                                                align="center"
+                                                prop="chargeRuleName"
+                                                label="收费名称"
+                                                show-overflow-tooltip>
+                                        </el-table-column>
+
+                                        <el-table-column
+                                                align="center"
+                                                prop="payMoney"
+                                                label="应收金额(￥)"
+                                                show-overflow-tooltip>
+                                        </el-table-column>
+
+                                        <el-table-column
+                                                align="center"
+                                                prop="isarrears"
+                                                label="缴费状态"
+                                                show-overflow-tooltip>
+                                            <template slot-scope="scope">
+                                                {{String(scope.row.isarrears) == 0 ? '待缴费' : '已缴费' }}
+                                            </template>
+                                        </el-table-column>
+
+                                        <el-table-column
+                                                align="center"
+                                                prop="chargeYear"
+                                                label="收费年限"
+                                                show-overflow-tooltip>
+                                        </el-table-column>
+
+                                        <el-table-column label="操作" align="center">
+                                            <template slot-scope="scope">
+                                                <el-button
+                                                        size="mini"
+                                                        type="primary"
+                                                        @click="commitPayment(scope.row)">立即缴费
+                                                </el-button>
+                                            </template>
+                                        </el-table-column>
+                                    </el-table>
+
+                                </el-drawer>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- 关于我们 -->
+<div id="testimonials">
+    <div class="container">
+        <div class="section-title">
+            <h2>关于我们</h2>
+        </div>
+        <div class="row">
+            <div class="col-xs-12 col-md-6">
+                <img src="img/intro-bg.jpg" class="img-responsive" alt="" width="585" height="350">
+            </div>
+            <div class="col-xs-12 col-md-6">
+                <div class="about-text">
+                    <h2 style="font-size: 28px">龙城物业</h2>
+                    <div class="col-lg-12 col-sm-12 col-xs-12" style="padding-left: 0;text-indent: 2em">
+                        龙城物业所属小区内部环境典雅幽静，绿化多，通过小区道路的合理组织，休闲设施的精心安排，提供自然、舒适的居住环境。
+                        周边配套齐全，设施完备，物业管理完善，保安24小时值班，住户素质高。社区主流健康向上，社区风气良好，邻里关系和谐。
+                        基础设施健全，周围商圈多，购物，就医，娱乐等方便快捷。
+                        为一个集生态环境、人文环境、信息化和管理控制自动化等优质服务为一体的高档个性化住宅小区。
+                        环境优美，丽水成天的风景给予了回归家庭、回归私域的生活体验。房屋楼层分布均匀，室内装修豪华气派，视眼非常宽广，采光较好。
+                        坐北朝南，整体体现现代简约风格，建筑设计线条明朗，色彩大气简约，采用中间高、东西低的建筑高度，使小区建筑形态层次分明，
+                        富有强烈韵律感。居于此，拥城市繁华、享离尘静谧，自由掌控生活，占核心享未来。
+                        <br/><br/><br/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 底部区域 -->
+<div id="footer" style="background: #FFF">
+    <div class="container text-center">
+        <p>Copyright &copy; 2023.Mr.Li All rights reserved.</p>
+    </div>
+</div>
+
+<!-- 开发环境版本，包含了有帮助的命令行警告 -->
+<script src="plugins/vue/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="plugins/element-ui/index.js"></script>
+<!-- 引入axios -->
+<script src="plugins/axios/axios.min.js"></script>
+
+<script>
+
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                table: false,
+                dialog: false,
+                loading: false,
+                tableData: [],
+
+                //搜索输入框的内容
+                noticeTitle: '',
+
+                //分页参数
+                currentPage: 1,
+                pageSize: 5,
+                total: 0,
+
+                serverData: [],
+
+                //用户评价数据
+                commentData: [],
+
+                //用户历史评价数据
+                historyCommentData: [],
+
+                //用户评价表单
+                commentFormVisible: false,
+                //工单Id
+                workOrderId: '',
+                //评价信息
+                commentInfo: {
+                    comment: '',
+                    id: '',
+                },
+
+                dialogTableVisible: false,
+                dialogFormVisible: false,
+                form: {
+                    //所属小区
+                    communityName: JSON.parse(localStorage.getItem('ownerInfo')).communityName,
+                    //业主名称
+                    name : JSON.parse(localStorage.getItem('ownerInfo')).name,
+                    //联系方式
+                    telephone: JSON.parse(localStorage.getItem('ownerInfo')).telephone,
+                    //所属栋数
+                    buildingName: JSON.parse(localStorage.getItem('ownerInfo')).buildingName,
+                    //楼层
+                    floor: JSON.parse(localStorage.getItem('ownerInfo')).floor,
+                    //单元
+                    unit: JSON.parse(localStorage.getItem('ownerInfo')).unit,
+                    //房间号
+                    roomNum: JSON.parse(localStorage.getItem('ownerInfo')).roomNum,
+                    // 问题描述
+                    description : ''
+                },
+
+                formLabelWidth: '120px',
+
+                drawer: false,
+                direction: 'ttb',
+
+                historyDrawer: false,
+                historyDirection: 'ttb',
+
+                paymentDrawer: false,
+                paymentDirection: 'btt',
+                paymentData: []
+            }
+        },
+
+        mounted(){
+            if (JSON.parse(localStorage.getItem('ownerInfo')) === null) {// 返回登录页面
+                window.top.location.href = 'page/login/login.html'
+            }else {
+                const ownerInfo = window.localStorage.getItem('ownerInfo')
+                if (ownerInfo) {
+                    this.ownerInfo = JSON.parse(ownerInfo)
+                }
+            }
+        },
+
+        methods: {
+            handleSizeChange(val) {
+                this.pageSize = val;
+                this.currentPage = 1;
+                this.getNoticeByPage();
+            },
+            handleCurrentChange(val) {
+                this.currentPage = val;
+                this.getNoticeByPage();
+            },
+
+            tableRowClassName({rowIndex}) {
+                if (rowIndex % 2 === 0) {
+                    return 'warning-row';
+                } else {
+                    return 'success-row';
+                }
+            },
+
+            //分页查询通知公告信息
+            getNoticeByPage() {
+                this.table = true;
+                let noticeTitle = this.noticeTitle;
+                let currentPage = this.currentPage;
+                let pageSize = this.pageSize
+                axios({
+                    url: "http://localhost:8080/notice/list",
+                    method: 'get',
+                    params: { noticeTitle, currentPage, pageSize }
+                }).then(resp => {
+                    if (resp.data.result === false) {
+                        this.$message({
+                            type: 'error',
+                            message: resp.data.msg
+                        });
+                    }
+                    this.tableData = resp.data.data.data
+                    this.total = resp.data.data.total
+                    this.currentPage = resp.data.data.currentPage
+                });
+            },
+
+            //提交上门服务信息
+            commitServer(){
+                this.dialogFormVisible = false;
+                axios({
+                    url: "http://localhost:8080/serve/add",
+                    method: 'post',
+                    data: this.form
+                }).then(resp => {
+                    if (resp.data.result === true) {
+                        this.form.description = ''
+                        this.$message({
+                            type: 'success',
+                            message: '提交成功，稍后将会有专业人员进行上门服务，请耐心等待！！！'
+                        });
+                    } else {
+                        this.form.description = ''
+                        this.$message({
+                            type: 'error',
+                            message: '提交失败,请稍后再试！！！'
+                        });
+                    }
+                });
+            },
+
+            //查询正在进行的上门服务信息
+            selectServerInfo(){
+                this.dialogTableVisible = true;
+                let name = JSON.parse(localStorage.getItem('ownerInfo')).name;
+                let telephone = JSON.parse(localStorage.getItem('ownerInfo')).telephone;
+                axios({
+                    url: "http://localhost:8080/serve/selectByOwner",
+                    method: 'get',
+                    params: { name, telephone}
+                }).then(resp => {
+                    if (resp.data.result === false) {
+                        this.$message({
+                            type: 'error',
+                            message: resp.data.msg
+                        });
+                    }
+                    this.serverData = resp.data.data
+                });
+            },
+
+            //修改上门服务进度
+            handleEdit(index, row) {
+                let serveId = row.id;
+                axios({
+                    url: "http://localhost:8080/workOrder/select",
+                    method: 'get',
+                    params: { serveId }
+                }).then(resp => {
+                    if (resp.data.result === false) {
+                        this.$message({
+                            type: 'error',
+                            message: resp.data.msg
+                        });
+                    }else {
+                        const h = this.$createElement;
+                        this.$msgbox({
+                            title: '服务状态',
+                            message: h('p', null, [
+                                h('span', null, '服务人员： '),
+                                h('i', { style: 'color: teal' }, resp.data.data.name),
+                                h('span', null, '      '),
+                                h('i', { style: 'color: teal' }, '         '),
+                                h('span', null, '联系电话： '),
+                                h('i', { style: 'color: teal' }, resp.data.data.telephone)
+                            ]),
+                            showCancelButton: true,
+                            confirmButtonText: '修改服务状态',
+                            cancelButtonText: '取消',
+                            beforeClose: (action, instance, done) => {
+                                if (action === 'confirm') {
+                                    axios({
+                                        url: "http://localhost:8080/serve/update",
+                                        method: 'post',
+                                        params: { serveId }}
+                                    ).then(resp => {
+                                        this.dialogTableVisible = false;
+                                        done();
+                                    });
+                                } else {
+                                    done();
+                                }
+                            }
+                        }).then(action => {
+                            this.$message({
+                                type: 'success',
+                                message: '状态修改成功，当前状态: 已处理'
+                            });
+                        });
+                    }
+                });
+            },
+
+            handleClose(done) {
+                this.$confirm('确认关闭？')
+                    .then(_ => {
+                        done();
+                    })
+                    .catch(_ => {});
+            },
+
+            //服务信息的展示
+            displayServer() {
+                this.drawer = true;
+                //业主名称
+                let name = JSON.parse(localStorage.getItem('ownerInfo')).name;
+                //联系方式
+                let telephone = JSON.parse(localStorage.getItem('ownerInfo')).telephone;
+
+                axios({
+                    url: "http://localhost:8080/serve/info",
+                    method: 'get',
+                    params: {name, telephone}
+                }).then(resp => {
+                    if (resp.data.result === false){
+                        this.$message({
+                            type: 'error',
+                            message: resp.data.msg
+                        });
+                        this.drawer = false;
+                    }else {
+                        this.commentData = resp.data.data
+                    }
+                });
+            },
+
+            //历史评价信息查询
+            displayHistoryServer() {
+                this.historyDrawer = true;
+                //业主名称
+                let name = JSON.parse(localStorage.getItem('ownerInfo')).name;
+                //联系方式
+                let telephone = JSON.parse(localStorage.getItem('ownerInfo')).telephone;
+
+                axios({
+                    url: "http://localhost:8080/serve/historyInfo",
+                    method: 'get',
+                    params: {name, telephone}
+                }).then(resp => {
+                    if (resp.data.result === false){
+                        this.$message({
+                            type: 'error',
+                            message: resp.data.msg
+                        });
+                        this.historyDrawer = false;
+                    }else {
+                        this.historyCommentData = resp.data.data
+                    }
+                });
+            },
+
+            //服务评价
+            commentServer(row) {
+                this.commentFormVisible = true;
+                this.commentInfo.id = row.workOrderId;
+            },
+
+            //提交服务评价
+            commitComment(){
+                axios({
+                    url: "http://localhost:8080/workOrder/comment",
+                    method: 'post',
+                    data: this.commentInfo
+                }).then(resp => {
+                    if (resp.data.result === false){
+                        this.$message({
+                            type: 'error',
+                            message: resp.data.msg
+                        });
+                    }else {
+                        this.$message({
+                            type: 'success',
+                            message: '评价成功'
+                        });
+                    }
+                    this.commentFormVisible = false;
+                    this.drawer = false;
+
+                    this.workOrderId = '';
+                });
+            },
+
+            //物业缴费查询
+            payment(){
+                this.paymentDrawer = true;
+                //业主名称
+                let name = JSON.parse(localStorage.getItem('ownerInfo')).name;
+                //联系方式
+                let telephone = JSON.parse(localStorage.getItem('ownerInfo')).telephone;
+
+                axios({
+                    url: "http://localhost:8080/chargeDetail/info",
+                    method: 'get',
+                    params: {name, telephone}
+                }).then(resp => {
+                    if (resp.data.result === false){
+                        this.$message({
+                            type: 'error',
+                            message: resp.data.msg
+                        });
+                        this.paymentDrawer = false;
+                    }else {
+                        this.paymentData = resp.data.data
+                    }
+                });
+            },
+
+            //物业费缴纳
+            commitPayment(row) {
+
+            }
+        }
+    })
+
+    //业主退出
+    function logOut(){
+        localStorage.removeItem('ownerInfo')
+        window.location.href= 'page/login/login.html'
+    }
+
+</script>
+
+</body>
+</html>

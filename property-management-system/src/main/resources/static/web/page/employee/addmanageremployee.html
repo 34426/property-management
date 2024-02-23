@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>新增管理人员</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
+    <link rel="stylesheet" href="../../styles/page.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <div class="addBrand-container" id="food-add-app">
+
+    <div class="container">
+
+      <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
+
+        <el-form-item label="姓名" prop="employeeName">
+          <el-input v-model="ruleForm.employeeName"></el-input>
+        </el-form-item>
+
+        <el-form-item label="年龄" prop="age">
+          <el-input v-model="ruleForm.age"></el-input>
+        </el-form-item>
+
+        <el-form-item label="身份证号" prop="idcard">
+          <el-input v-model="ruleForm.idcard"></el-input>
+        </el-form-item>
+
+        <el-form-item label="联系方式" prop="telephone">
+          <el-input v-model="ruleForm.telephone"></el-input>
+        </el-form-item>
+
+        <el-form-item label="性别" prop="employeeSex">
+          <el-radio-group v-model="ruleForm.employeeSex">
+            <el-radio label="男"></el-radio>
+            <el-radio label="女"></el-radio>
+          </el-radio-group>
+        </el-form-item>
+
+        <el-form-item label="入职日期" required v-if="id === ''">
+          <el-col :span="11">
+            <el-form-item prop="entryTime">
+              <el-date-picker type="date" placeholder="选择日期" v-model="ruleForm.entryTime" style="width: 100%;"></el-date-picker>
+            </el-form-item>
+          </el-col>
+        </el-form-item>
+
+        <el-form-item label="离职日期">
+          <el-col :span="11">
+            <el-form-item prop="dimissionTime">
+              <el-date-picker type="date" placeholder="选择日期" v-model="ruleForm.dimissionTime" style="width: 100%;"></el-date-picker>
+            </el-form-item>
+          </el-col>
+        </el-form-item>
+
+        <el-form-item label="具体职位" prop="office">
+          <el-input v-model="ruleForm.office"></el-input>
+        </el-form-item>
+
+        <el-form-item>
+          <el-button type="primary" @click="submitForm('ruleForm')">立即创建</el-button>
+          <el-button @click="resetForm('ruleForm')">重置</el-button>
+        </el-form-item>
+
+      </el-form>
+    </div>
+  </div>
+
+</div>
+
+<!-- 开发环境版本，包含了有帮助的命令行警告 -->
+<script src="../../plugins/vue/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="../../plugins/element-ui/index.js"></script>
+<!-- 引入axios -->
+<script src="../../plugins/axios/axios.min.js"></script>
+<!-- 引入前端响应拦截器 -->
+<script src="../../js/request.js"></script>
+
+<script src="../../js/index.js"></script>
+
+<script>
+  new Vue({
+    el: '#app',
+    data() {
+      return {
+        ruleForm: {
+          //姓名
+          communityName: '',
+          //姓名
+          employeeName: '',
+          //身份证号
+          idcard: '',
+          //联系方式
+          telephone: '',
+          //年龄
+          age: '',
+          //入职日期
+          entryTime: '',
+          //性别
+          employeeSex: '',
+          //具体职位
+          office: '',
+          //离职日期
+          dimissionTime: '',
+          //职务类型
+          officeType: '0'
+        },
+        rules: {
+          employeeName: [
+            { required: true, message: '请输入姓名', trigger: 'blur' },
+          ],
+          idcard: [
+            { required: true, message: '请输入身份证号', trigger: 'blur' },
+          ],
+          telephone: [
+            { required: true, message: '请输入联系方式', trigger: 'blur' },
+          ],
+          age: [
+            { required: true, message: '请输入年龄', trigger: 'blur' },
+          ],
+          entryTime: [
+            { type: 'date', required: true, message: '请选择入职日期', trigger: 'change' }
+          ],
+          employeeSex: [
+            { required: true, message: '请选择性别', trigger: 'change' }
+          ],
+          office: [
+            { required: true, message: '请选择具体职位', trigger: 'blur' }
+          ],
+        }
+      };
+    },
+
+    created() {
+      let id = requestUrlParam('id');
+      this.id = id;
+      axios({
+        url: "http://localhost:8080/employee/one",
+        method: 'get',
+        params: { id }
+      }).then(resp => {
+        if (resp.data.result === true) {
+          resp.data.data.entryTime = null;
+
+          this.ruleForm = resp.data.data;
+        }
+      })
+    },
+
+    methods: {
+
+      //新增管理层员工
+      submitForm(formName) {
+        this.$refs[formName].validate((valid) => {
+          if (valid) {
+            axios({
+              url: "http://localhost:8080/employee/add",
+              method: 'put',
+              data: this.ruleForm
+            }).then(resp => {
+              if (resp.data.result === true) {
+                this.$message({
+                  type: 'success',
+                  message: '操作成功!'
+                });
+                this.resetForm('ruleForm')
+              } else {
+                this.$message({
+                  type: 'error',
+                  message: '操作失败,请稍后再试!'
+                });
+              }
+            })
+          } else {
+            return false;
+          }
+        });
+      },
+
+      resetForm(formName) {
+        this.$refs[formName].resetFields();
+      }
+    }
+  });
+</script>
+
+</body>
+</html>

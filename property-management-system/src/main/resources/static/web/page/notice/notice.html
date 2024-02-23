@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>通知管理</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css"/>
+    <link rel="stylesheet" href="../../styles/page.css"/>
+
+    <style>
+        .el-col {
+            border-radius: 4px;
+        }
+
+        .bg-purple-dark {
+            background: #99a9bf;
+        }
+
+        .bg-purple-light {
+            background: #e5e9f2;
+        }
+
+        .grid-content {
+            border-radius: 4px;
+            min-height: 36px;
+        }
+
+        .row-bg {
+            padding: 10px 0;
+            background-color: #f9fafc;
+        }
+    </style>
+
+</head>
+<body>
+
+<div id="app">
+
+    <div class="dashboard-container" id="food-app">
+        <div class="container">
+            <div class="tableBar">
+
+                <el-input
+                        v-model="noticeTitle"
+                        placeholder="请输入公告标题"
+                        style="width: 250px"
+                        clearable
+                        @keyup.enter.native="getNoticeByPage">
+                </el-input>
+
+                <div class="tableLab">
+                    <!--    取消全选按钮-->
+                    <el-button @click="toggleSelection()" type="primary">取消全选</el-button>
+                    <!--    批量删除按钮-->
+                    <el-button @click="multiDeleteNotice()" type="danger">批量删除</el-button>
+                    <!--    发布通知按钮-->
+                    <el-button @click="addNotice('add')" type="success">发布通知</el-button>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="tableBar">
+            <el-row>
+                <el-col :span="24">
+                    <div class="grid-content bg-purple-dark">
+                        <!--    通知公告表单-->
+                        <el-table
+                                ref="multipleTable"
+                                :data="tableData"
+                                tooltip-effect="dark"
+                                style="width: 100%"
+                                @selection-change="handleSelectionChange">
+
+                            <el-table-column
+                                    type="selection"
+                                    width="55">
+                            </el-table-column>
+
+                            <el-table-column
+                                    align="center"
+                                    prop="title"
+                                    label="公告标题"
+                                    width="120">
+                            </el-table-column>
+
+                            <el-table-column
+                                    align="center"
+                                    prop="content"
+                                    label="公告内容"
+                                    show-overflow-tooltip>
+                            </el-table-column>
+
+                            <el-table-column
+                                    align="center"
+                                    prop="createUser"
+                                    label="创建用户"
+                                    width="120">
+                            </el-table-column>
+
+                            <el-table-column
+                                    align="center"
+                                    prop="updateUser"
+                                    label="修改用户"
+                                    width="120">
+                            </el-table-column>
+
+                            <el-table-column
+                                    align="center"
+                                    label="创建日期"
+                                    prop="createDate"
+                                    width="135">
+                                <template slot-scope="scope">{{ scope.row.createDate }}</template>
+                            </el-table-column>
+
+                            <el-table-column
+                                    align="center"
+                                    prop="updateDate"
+                                    label="修改日期"
+                                    width="135">
+                                <template slot-scope="scope">{{ scope.row.updateDate }}</template>
+                            </el-table-column>
+
+                            <el-table-column label="操作" align="center">
+                                <template slot-scope="scope">
+                                    <el-button
+                                            size="mini"
+                                            type="primary"
+                                            @click="addNotice(scope.row.id)">修改
+                                    </el-button>
+
+                                    <el-button
+                                            size="mini"
+                                            type="danger"
+                                            @click="handleDelete(scope.$index, scope.row)">删除
+                                    </el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </div>
+                </el-col>
+            </el-row>
+        </div>
+
+        <div class="tableBar">
+            <div class="block" align="center">
+                <el-pagination
+                        @size-change="handleSizeChange"
+                        @current-change="handleCurrentChange"
+                        :current-page="currentPage"
+                        :page-sizes="[5, 10, 15, 20]"
+                        :page-size="pageSize"
+                        layout="total, sizes, prev, pager, next, jumper"
+                        :total="total">
+                </el-pagination>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- 开发环境版本，包含了有帮助的命令行警告 -->
+<script src="../../plugins/vue/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="../../plugins/element-ui/index.js"></script>
+<!-- 引入axios -->
+<script src="../../plugins/axios/axios.min.js"></script>
+
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                tableData: [],
+                multipleSelection: [],
+
+                //搜索输入框的内容
+                noticeTitle: '',
+
+                //分页参数
+                currentPage: 1,
+                pageSize: 5,
+                total: 0,
+            };
+        },
+
+        //钩子函数，页面初始化
+        mounted() {
+            this.getNoticeByPage();
+        },
+
+        methods: {
+            //取消多选框的全部选择
+            toggleSelection(rows) {
+                if (rows) {
+                    rows.forEach(row => {
+                        this.$refs.multipleTable.toggleRowSelection(row);
+                    });
+                } else {
+                    this.$refs.multipleTable.clearSelection();
+                }
+            },
+
+            handleSelectionChange(val) {
+                this.multipleSelection = val
+            },
+
+            //删除
+            handleDelete(index, row) {
+                console.log(row);
+                this.multipleSelection[0] = row;
+
+                this.multiDeleteNotice()
+            },
+
+            //删除通知的方法
+            deleteNotice(noticeIds){
+                let str = "http://localhost:8080/notice/delete?";
+
+                for (let i = 0; i < noticeIds.length; i++) {
+                    if (i === noticeIds.length - 1){
+                        str = str.concat("noticeIds=" + noticeIds[i]);
+                    }else {
+                        str = str.concat("noticeIds=" + noticeIds[i] + "&");
+                    }
+                }
+
+                axios({
+                    url: str,
+                    method: 'delete',
+                }).then(resp => {
+                    if (resp.data.result === true){
+                        this.$message({
+                            type: 'success',
+                            message: '删除成功!'
+                        });
+                        this.getNoticeByPage();
+                    }else {
+                        this.$message({
+                            type: 'error',
+                            message: '删除失败,请稍后再试!'
+                        });
+                    }
+                });
+            },
+
+            //批量删除通知
+            multiDeleteNotice() {
+                let noticeIds = [];
+                for (let i = 0; i < this.multipleSelection.length; i++) {
+                    noticeIds.push(this.multipleSelection[i].id)
+                }
+
+                this.open(noticeIds);
+            },
+
+            //发布通知
+            addNotice(flag) {
+                if (flag === 'add') {
+                    window.parent.menuHandle({
+                        id: '2',
+                        url: 'page/notice/addnotice.html',
+                        name: '发布通知'
+                    }, true)
+                } else {
+                    window.parent.menuHandle({
+                        id: '2',
+                        url: 'page/notice/addnotice.html?id='+flag,
+                        name: '修改通知'
+                    }, true)
+                }
+            },
+
+            handleSizeChange(val) {
+                this.pageSize = val;
+                this.currentPage = 1;
+                this.getNoticeByPage();
+            },
+            handleCurrentChange(val) {
+                this.currentPage = val;
+                this.getNoticeByPage();
+            },
+
+            //分页查询通知公告
+            getNoticeByPage() {
+                let noticeTitle = this.noticeTitle;
+                let currentPage = this.currentPage;
+                let pageSize = this.pageSize
+                axios({
+                    url: "http://localhost:8080/notice/list",
+                    method: 'get',
+                    params: { noticeTitle, currentPage, pageSize }
+                }).then(resp => {
+                    if (resp.data.result === false && resp.data.msg === 'NOTLOGIN') {// 返回登录页面
+                        localStorage.removeItem('userInfo')
+                        window.top.location.href = '/web/page/login/login.html'
+                    } else {
+                        if (resp.data.result === false){
+                            this.$message({
+                                type: 'error',
+                                message: resp.data.msg
+                            });
+                        }
+                        this.tableData = resp.data.data.data
+                        this.total = resp.data.data.total
+                        this.currentPage = resp.data.data.currentPage
+                    }
+                });
+            },
+
+            // 打开删除的确认对话框
+            open(noticeIds) {
+                this.$confirm('此操作将永久删除该通知, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    this.deleteNotice(noticeIds)
+                }).catch(() => {
+                    this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+            }
+        }
+    });
+
+</script>
+
+</body>
+</html>

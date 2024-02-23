@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>收费明细表</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
+    <link rel="stylesheet" href="../../styles/page.css" />
+
+    <style>
+        .el-col {
+            border-radius: 4px;
+        }
+        .bg-purple-dark {
+            background: #99a9bf;
+        }
+        .bg-purple-light {
+            background: #e5e9f2;
+        }
+        .grid-content {
+            border-radius: 4px;
+            min-height: 36px;
+        }
+        .row-bg {
+            padding: 10px 0;
+            background-color: #f9fafc;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+
+    <div class="dashboard-container" id="food-app">
+        <div class="container">
+
+            <el-form :inline="true" :model="formInline" class="demo-form-inline">
+
+                <el-form-item label="小区名称">
+                    <el-select v-model="formInline.communityName" placeholder="小区名称" clearable>
+                        <el-option label="休伯利安" value="休伯利安"></el-option>
+                        <el-option label="璃月" value="璃月"></el-option>
+                    </el-select>
+                </el-form-item>
+
+                <el-form-item label="是否欠费">
+                    <el-select v-model="formInline.isarrears" placeholder="是否欠费" clearable>
+                        <el-option label="欠费" value="0"></el-option>
+                        <el-option label="未欠费" value="1"></el-option>
+                    </el-select>
+                </el-form-item>
+
+                <el-form-item label="业主名称">
+                    <el-input v-model="formInline.ownerName" placeholder="业主名称"></el-input>
+                </el-form-item>
+
+                <el-form-item label="收费年限">
+                    <el-input v-model="formInline.chargeYear" placeholder="收费年限(只需输入年份即可)"></el-input>
+                </el-form-item>
+
+                <el-form-item>
+                    <el-button type="primary" @click="onSubmit">查询</el-button>
+                </el-form-item>
+            </el-form>
+
+            <!--    取消全选按钮-->
+<!--            <el-button @click="toggleSelection()" type="primary">取消全选</el-button>-->
+            <!--    批量删除按钮-->
+<!--            <el-button @click="multiDelete()" type="danger">批量删除</el-button>-->
+
+        </div>
+
+        <el-row>
+            <el-col :span="24">
+                <div class="grid-content bg-purple-dark">
+                    <!--    收费明细表单-->
+                    <el-table
+                            ref="multipleTable"
+                            :data="tableData"
+                            tooltip-effect="dark"
+                            style="width: 100%"
+                            @selection-change="handleSelectionChange">
+
+<!--                        <el-table-column-->
+<!--                                type="selection"-->
+<!--                                width="55">-->
+<!--                        </el-table-column>-->
+
+                        <el-table-column
+                                align="center"
+                                prop="communityName"
+                                label="所属小区"
+                                width="120">
+                        </el-table-column>
+
+                        <el-table-column
+                                align="center"
+                                prop="chargeRuleType"
+                                label="收费类型"
+                                width="120">
+                        </el-table-column>
+
+                        <el-table-column
+                                align="center"
+                                prop="chargeRuleName"
+                                label="收费名称"
+                                width="120">
+                        </el-table-column>
+
+                        <el-table-column
+                                align="center"
+                                prop="ownerName"
+                                label="业主名称"
+                                width="120">
+                        </el-table-column>
+
+                        <el-table-column
+                                align="center"
+                                prop="ownerTelephone"
+                                label="联系方式"
+                                width="120">
+                        </el-table-column>
+
+                        <el-table-column
+                                align="center"
+                                prop="payMoney"
+                                label="应收金额(￥)"
+                                width="120">
+                        </el-table-column>
+
+                        <el-table-column
+                                align="center"
+                                prop="actualMoney"
+                                label="实收金额(￥)"
+                                width="120">
+                        </el-table-column>
+
+                        <el-table-column
+                                align="center"
+                                prop="isarrears"
+                                label="是否欠费"
+                                width="120">
+                            <template slot-scope="scope">
+                                {{String(scope.row.isarrears) == 0 ? '欠费' : '未欠费' }}
+                            </template>
+                        </el-table-column>
+
+                        <el-table-column
+                                align="center"
+                                prop="chargeYear"
+                                label="收费年限"
+                                width="120">
+                        </el-table-column>
+
+                        <el-table-column
+                                align="center"
+                                prop="payTime"
+                                label="缴费时间"
+                                width="145">
+                        </el-table-column>
+
+<!--                        <el-table-column label="操作" align="center">-->
+<!--                            <template slot-scope="scope">-->
+<!--                                <el-button-->
+<!--                                        size="mini"-->
+<!--                                        type="primary"-->
+<!--                                        @click="handleEdit(scope.$index, scope.row)">修改-->
+<!--                                </el-button>-->
+<!--                                <el-button-->
+<!--                                        size="mini"-->
+<!--                                        type="danger"-->
+<!--                                        @click="handleDelete(scope.$index, scope.row)">删除-->
+<!--                                </el-button>-->
+<!--                            </template>-->
+<!--                        </el-table-column>-->
+                    </el-table>
+                </div>
+            </el-col>
+        </el-row>
+
+        <div class="block" align="center">
+            <el-pagination
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+                    :current-page="currentPage"
+                    :page-sizes="[5, 10, 15, 20]"
+                    :page-size="pageSize"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total="total">
+            </el-pagination>
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- 开发环境版本，包含了有帮助的命令行警告 -->
+<script src="../../plugins/vue/vue.js"></script>
+<!-- 引入组件库 -->
+<script src="../../plugins/element-ui/index.js"></script>
+<!-- 引入axios -->
+<script src="../../plugins/axios/axios.min.js"></script>
+
+
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                tableData: [],
+                multipleSelection: [],
+
+                //搜索框内容
+                formInline: {
+                    communityName: '',
+                    isarrears: '',
+                    ownerName: '',
+                    chargeYear: ''
+                },
+
+                //分页参数
+                currentPage: 1,
+                pageSize: 5,
+                total: 0
+            };
+        },
+
+        //钩子函数，页面初始化
+        mounted() {
+            this.getChargeDetailByPage();
+        },
+
+        methods: {
+            //取消多选框的全部选择
+            toggleSelection(rows) {
+                if (rows) {
+                    rows.forEach(row => {
+                        this.$refs.multipleTable.toggleRowSelection(row);
+                    });
+                } else {
+                    this.$refs.multipleTable.clearSelection();
+                }
+            },
+
+            handleSelectionChange(val) {
+                this.multipleSelection = val
+            },
+
+            //修改
+            handleEdit(index, row) {
+                console.log(index, row);
+            },
+
+            //删除
+            handleDelete(index, row) {
+                console.log(index, row);
+            },
+
+            //批量删除
+            multiDelete(){
+                console.log(this.multipleSelection)
+            },
+
+            //新增物业收费信息
+            addChargeInfo(st){
+                if (st === 'add'){
+                    window.parent.menuHandle({
+                        id: '11',
+                        url: 'page/charge/addchargerule.html',
+                        name: '新增物业收费'
+                    },true)
+                } else {
+                    window.parent.menuHandle({
+
+                    },true)
+                }
+            },
+
+            //查找物业收费明细
+            onSubmit() {
+                this.getChargeDetailByPage();
+            },
+
+            handleSizeChange(val) {
+                this.pageSize = val;
+                this.currentPage = 1;
+
+                this.getChargeDetailByPage();
+            },
+            handleCurrentChange(val) {
+                this.currentPage = val;
+                this.getChargeDetailByPage();
+            },
+
+            //分页查询物业收费明细
+            getChargeDetailByPage() {
+                let isarrears = this.formInline.isarrears
+                let ownerName = this.formInline.ownerName
+                let chargeYear = this.formInline.chargeYear
+                let communityName = this.formInline.communityName
+                let currentPage = this.currentPage
+                let pageSize = this.pageSize
+                axios({
+                    url: "http://localhost:8080/chargeDetail/list",
+                    method: 'get',
+                    params: { isarrears, ownerName, communityName, chargeYear, currentPage, pageSize }
+                }).then(resp => {
+                    if (resp.data.result === false && resp.data.msg === 'NOTLOGIN') {// 返回登录页面
+                        localStorage.removeItem('userInfo')
+                        window.top.location.href = '/web/page/login/login.html'
+                    } else {
+                        if (resp.data.result === false){
+                            this.$message({
+                                type: 'error',
+                                message: resp.data.msg
+                            });
+                        }
+                        this.tableData = resp.data.data.data
+                        this.total = resp.data.data.total
+                        this.currentPage = resp.data.data.currentPage
+                    }
+                });
+            },
+        }
+    });
+
+</script>
+
+</body>
+</html>
