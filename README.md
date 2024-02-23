@@ -1,6 +1,6 @@
 # 基于springboot+vue前后端分离的物业管理系统
 
-### 9.9￥ 获取完整源码+sql，需要加Q：3808981644  或者加微信 ：qszard26
+### 19.9￥ 获取完整源码+sql，需要加Q：3808981644  或者加微信 ：qszard26
 ### 有问题，或者需要协助调试运行项目的也可联系
 ### 更多项目： https://github.com/34426?tab=repositories
 
@@ -41,7 +41,7 @@ https://github.com/34426/wuyemanagement
 
 ![img_4.png](imgs/img_4.png)
 
-### 9.9￥ 获取完整源码+sql，需要加Q：3808981644  或者加微信 ：qszard26
+### 19.9￥ 获取完整源码+sql，需要加Q：3808981644  或者加微信 ：qszard26
 ### 有问题，或者需要协助调试运行项目的也可联系
 
 ![img_6.png](imgs/img_6.png)
